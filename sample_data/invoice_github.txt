@@ -1,0 +1,21 @@
+GitHub, Inc.
+88 Colin P Kelly Jr St
+San Francisco, CA 94107
+United States
+
+RECEIPT & TAX INVOICE
+Invoice #: GH-SUBS-2026-99318
+Date of Issue: October 10, 2026
+Billed To: Studio Bianchini (VAT: IT09876543211)
+
+Itemized Charges:
+1. GitHub Team Plan (1 seat x 1 month)             $4.00
+2. GitHub Copilot Individual Monthly Subscription  $10.00
+3. GitHub Actions extra runner minutes (250 mins)   $2.00
+--------------------------------------------------------
+Net Total:                                         $16.00
+VAT / Sales Tax (0% Reverse Charge EU B2B):         $0.00
+--------------------------------------------------------
+TOTAL BILLED:                                      $16.00 USD
+
+Paid via PayPal. Transaction reference: PP-992147102.

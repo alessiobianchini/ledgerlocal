@@ -1,0 +1,23 @@
+Uber B.V.
+Mr. Treublaan 7, 1097 DP Amsterdam, Netherlands
+VAT ID: NL852071589B01
+
+TRIP RECEIPT
+Date: October 6, 2026 at 08:42 AM
+Rider: Alessio Bianchini
+Trip ID: ub-74b8-912a-4318
+
+Pickup: Milan Central Station, Piazza Duca d'Aosta 1
+Dropoff: Linate Airport Terminal 1, Milan
+
+Trip Breakdown:
+Base Fare: €4.50
+Distance & Time (Uber Black): €32.80
+Airport Access Surcharge: €3.00
+--------------------------------------------------------
+Subtotal: €40.30
+Italian VAT (10%): €4.03
+--------------------------------------------------------
+TOTAL CHARGED: €44.33 EUR
+
+Payment: Mastercard ending in 8802

@@ -1,0 +1,24 @@
+DIGITALOCEAN LLC
+101 Avenue of the Americas, 10th Floor
+New York, NY 10013
+United States
+
+INVOICE
+Invoice Number: DO-INVOICE-8491024
+Invoice Date: October 1, 2026
+Payment Method: Visa ending in 4119
+Customer: Alessio Bianchini
+Account ID: DO-USR-99214
+
+DESCRIPTION                                       AMOUNT
+Standard Droplet (2 vCPU / 4GB RAM) - Frankfurt   $24.00
+Spaces Object Storage (250GB storage + CDN)        $5.00
+Managed PostgreSQL Database Cluster               $15.00
+--------------------------------------------------------
+Subtotal:                                         $44.00
+Tax (VAT 22%):                                     $9.68
+--------------------------------------------------------
+TOTAL PAID:                                       $53.68 USD
+
+Status: PAID IN FULL
+Thank you for your business!

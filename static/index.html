@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LedgerLocal</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161920;
+      --panel-hover: #1c2029;
+      --border: #262b35;
+      --text: #e6e8ec;
+      --text-muted: #8b92a0;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --danger: #ef4444;
+      --success: #10b981;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #1e2430;
+      border: 1px solid #2e3646;
+      color: var(--text-muted);
+    }
+
+    .badge.online {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.3);
+    }
+
+    .badge.offline {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button, .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.1s ease;
+      text-decoration: none;
+    }
+
+    button:hover, .btn:hover {
+      background: var(--panel-hover);
+      border-color: #3b4252;
+    }
+
+    button.primary, .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.primary:hover, .btn.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    button.danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Summary Bar */
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .summary-metrics {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .summary-metrics span strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Upload Drop Area */
+    .dropzone {
+      border: 1px dashed #3a4252;
+      border-radius: 6px;
+      background: rgba(22, 25, 32, 0.4);
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .dropzone p {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .dropzone strong {
+      color: var(--text);
+    }
+
+    /* Table Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .search-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      width: 240px;
+      outline: none;
+    }
+
+    .search-box:focus {
+      border-color: var(--accent);
+    }
+
+    .filter-select {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    /* Table */
+    .table-container {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: #13161c;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(38, 43, 53, 0.6);
+      font-size: 12px;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--panel-hover); }
+
+    .col-date, .col-num {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .col-num {
+      text-align: right;
+    }
+
+    .tax-sub {
+      display: block;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .cat-tag {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: #1b2029;
+      border: 1px solid #28303e;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .actions-cell {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .actions-cell button {
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 8px 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #181b22;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .modal h3 {
+      font-size: 14px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      background: #101216;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    #loading-indicator {
+      display: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      font-size: 12px;
+      font-family: var(--mono);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>LedgerLocal</h1>
+      <span id="ollama-status" class="badge">checking runtime...</span>
+    </div>
+
+    <div class="header-actions">
+      <button onclick="refreshData()">Refresh</button>
+      <a href="/api/export" class="btn primary">Export CSV</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Summary Bar -->
+    <div class="summary-bar">
+      <div class="summary-metrics">
+        <span>Records: <strong id="m-count">0</strong></span>
+        <span>Total: <strong id="m-total">0.00</strong></span>
+        <span id="m-currencies" style="color: var(--text-muted);"></span>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted);">
+        Local Ollama (phi4-mini) &bull; Zero network calls
+      </div>
+    </div>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="drop-area" onclick="document.getElementById('file-picker').click()">
+      <input type="file" id="file-picker" multiple style="display:none;" accept=".pdf,.txt,.md,.csv,.json" onchange="handleFiles(this.files)">
+      <p><strong>Drag and drop PDF or text invoices here</strong>, or click to select files</p>
+      <div id="loading-indicator">Processing receipts with local model...</div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="search" class="search-box" placeholder="Filter merchant or notes..." oninput="applyFilter()">
+        <select id="cat-filter" class="filter-select" onchange="applyFilter()">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 100px;">Date</th>
+            <th>Vendor</th>
+            <th style="width: 180px;">Category</th>
+            <th>Summary</th>
+            <th style="width: 120px; text-align: right;">Amount</th>
+            <th style="width: 110px; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">No receipts logged yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="status-bar">
+      <span>Database: <code>ledger.db</code></span>
+      <span>LedgerLocal v0.2.0 &bull; Hacktoberfest 2026</span>
+    </div>
+  </main>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <h3>Edit Expense</h3>
+      <form id="edit-form" onsubmit="submitEdit(event)">
+        <input type="hidden" id="e-id">
+
+        <div class="form-group">
+          <label>Vendor</label>
+          <input type="text" id="e-vendor" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date (YYYY-MM-DD)</label>
+            <input type="text" id="e-date" placeholder="YYYY-MM-DD">
+          </div>
+          <div class="form-group">
+            <label>Invoice / Ref #</label>
+            <input type="text" id="e-inv">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total Amount</label>
+            <input type="number" step="0.01" id="e-total" required>
+          </div>
+          <div class="form-group">
+            <label>Tax / VAT</label>
+            <input type="number" step="0.01" id="e-tax">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Currency</label>
+            <input type="text" id="e-curr" required maxlength="4">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="e-cat"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Summary / Line Item</label>
+          <input type="text" id="e-summary">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let cache = [];
+
+    async function checkHealth() {
+      try {
+        const r = await fetch('/api/ping');
+        const data = await r.json();
+        const badge = document.getElementById('ollama-status');
+        if (data.ollama) {
+          badge.textContent = 'ollama: online';
+          badge.className = 'badge online';
+        } else {
+          badge.textContent = 'ollama: offline';
+          badge.className = 'badge offline';
+        }
+      } catch (e) {
+        document.getElementById('ollama-status').textContent = 'runtime: unreachable';
+      }
+    }
+
+    async function refreshData() {
+      try {
+        const res = await fetch('/api/receipts');
+        const data = await res.json();
+        cache = data.receipts;
+
+        // Populate category dropdowns if empty
+        const filterSel = document.getElementById('cat-filter');
+        const editSel = document.getElementById('e-cat');
+        if (filterSel.options.length <= 1) {
+          data.categories.forEach(c => {
+            filterSel.add(new Option(c, c));
+            editSel.add(new Option(c, c));
+          });
+        }
+
+        // Summary metrics
+        document.getElementById('m-count').textContent = data.stats.count;
+        document.getElementById('m-total').textContent = data.stats.total.toFixed(2);
+        
+        const curList = Object.entries(data.stats.currencies).map(([c, v]) => `${v.toFixed(2)} ${c}`);
+        document.getElementById('m-currencies').textContent = curList.length ? '(' + curList.join(', ') + ')' : '';
+
+        applyFilter();
+      } catch (e) {
+        console.error("Failed to load receipts:", e);
+      }
+    }
+
+    function renderRows(items) {
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">No receipts found.</td></tr>';
+        return;
+      }
+
+      items.forEach(r => {
+        const tr = document.createElement('tr');
+        const taxInfo = r.tax_amount !== null ? `<span class="tax-sub">tax: ${r.tax_amount.toFixed(2)}</span>` : '';
+        const invInfo = r.invoice_number ? `<span style="color: var(--text-muted); font-size: 11px;">#${escape(r.invoice_number)}</span>` : '';
+
+        tr.innerHTML = `
+          <td class="col-date">${r.date || '<span style="color: var(--text-muted);">—</span>'}</td>
+          <td>
+            <strong>${escape(r.vendor)}</strong>
+            ${invInfo}
+          </td>
+          <td><span class="cat-tag">${escape(r.category)}</span></td>
+          <td style="color: var(--text-muted);">${escape(r.summary)}</td>
+          <td class="col-num">
+            <strong>${r.total_amount.toFixed(2)}</strong> ${r.currency}
+            ${taxInfo}
+          </td>
+          <td class="actions-cell">
+            <button onclick="editModal('${r.id}')">Edit</button>
+            <button class="danger" onclick="delReceipt('${r.id}')">Del</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('search').value.toLowerCase().trim();
+      const cat = document.getElementById('cat-filter').value;
+
+      const filtered = cache.filter(r => {
+        const text = (r.vendor + ' ' + (r.summary || '') + ' ' + (r.invoice_number || '')).toLowerCase();
+        return text.includes(q) && (!cat || r.category === cat);
+      });
+
+      renderRows(filtered);
+    }
+
+    async function handleFiles(files) {
+      if (!files.length) return;
+      const indicator = document.getElementById('loading-indicator');
+      indicator.style.display = 'block';
+      indicator.textContent = `Parsing ${files.length} document(s) with local AI...`;
+
+      const fd = new FormData();
+      for (let i = 0; i < files.length; i++) fd.append('files', files[i]);
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.errors && data.errors.length) {
+          alert('Could not parse ' + data.errors.map(e => `${e.file}: ${e.error}`).join('\n'));
+        }
+        await refreshData();
+      } catch (err) {
+        alert("Upload failed: " + err);
+      } finally {
+        indicator.style.display = 'none';
+        document.getElementById('file-picker').value = '';
+      }
+    }
+
+    function editModal(id) {
+      const r = cache.find(x => x.id === id);
+      if (!r) return;
+      document.getElementById('e-id').value = r.id;
+      document.getElementById('e-vendor').value = r.vendor;
+      document.getElementById('e-date').value = r.date || '';
+      document.getElementById('e-inv').value = r.invoice_number || '';
+      document.getElementById('e-total').value = r.total_amount;
+      document.getElementById('e-tax').value = r.tax_amount !== null ? r.tax_amount : '';
+      document.getElementById('e-curr').value = r.currency;
+      document.getElementById('e-cat').value = r.category;
+      document.getElementById('e-summary').value = r.summary;
+      document.getElementById('edit-modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('edit-modal').classList.remove('open');
+    }
+
+    async function submitEdit(e) {
+      e.preventDefault();
+      const id = document.getElementById('e-id').value;
+      const payload = {
+        vendor: document.getElementById('e-vendor').value,
+        date: document.getElementById('e-date').value || null,
+        invoice_number: document.getElementById('e-inv').value || null,
+        total_amount: parseFloat(document.getElementById('e-total').value) || 0,
+        tax_amount: document.getElementById('e-tax').value ? parseFloat(document.getElementById('e-tax').value) : null,
+        currency: document.getElementById('e-curr').value.toUpperCase(),
+        category: document.getElementById('e-cat').value,
+        summary: document.getElementById('e-summary').value
+      };
+
+      try {
+        await fetch(`/api/receipts/${id}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        closeModal();
+        await refreshData();
+      } catch (err) {
+        alert('Save failed: ' + err);
+      }
+    }
+
+    async function delReceipt(id) {
+      if (!confirm("Delete this expense record?")) return;
+      try {
+        await fetch(`/api/receipts/${id}`, { method: 'DELETE' });
+        await refreshData();
+      } catch (err) {
+        alert('Delete failed: ' + err);
+      }
+    }
+
+    // Drag-and-drop wiring
+    const dropArea = document.getElementById('drop-area');
+    ['dragenter', 'dragover'].forEach(e => {
+      dropArea.addEventListener(e, (ev) => { ev.preventDefault(); dropArea.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(e => {
+      dropArea.addEventListener(e, (ev) => { ev.preventDefault(); dropArea.classList.remove('dragover'); });
+    });
+    dropArea.addEventListener('drop', (ev) => {
+      if (ev.dataTransfer.files.length) handleFiles(ev.dataTransfer.files);
+    });
+
+    function escape(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Init
+    checkHealth();
+    refreshData();
+  </script>
+</body>
+</html>
