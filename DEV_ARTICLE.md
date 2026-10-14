@@ -2,7 +2,7 @@
 title: "I was tired of manual bookkeeping, so I wrote an offline receipt parser with Ollama"
 published: true
 tags: hf26challenge, opensource, python, ai
-cover_image: https://dev-to-uploads.s3.amazonaws.com/uploads/articles/placeholder.png
+cover_image: https://raw.githubusercontent.com/alessiobianchini/ledgerlocal/main/screenshot.png
 canonical_url: https://github.com/alessiobianchini/ledgerlocal
 ---
 
@@ -40,9 +40,11 @@ The pipeline is simple:
 2. **Local Inference:** It posts the raw text to Ollama running `phi4-mini:latest` (or `llama3.2-vision` if you want multimodal). `phi4-mini` is roughly 3.8B parameters, fits comfortably in 4GB of RAM, and parses an invoice on my laptop in about 2-3 seconds.
 3. **Structured Output:** I used Ollama's native `format: "json"` with a strict prompt specifying standard accounting deduction categories (Software, Hosting, Meals, Travel, etc.) and explicit rules for VAT and ISO dates.
 4. **Validation & Storage:** A Pydantic v2 schema validates the output and saves it into a local SQLite file (`ledger.db`).
-5. **UI:** I didn't want a 500MB `node_modules` folder, so the web UI is literally a single `index.html` file using Tailwind via CDN and vanilla JavaScript `fetch()`.
+5. **UI:** I didn't want a 500MB `node_modules` folder, so the web UI is a single `index.html` file using standard system fonts, responsive CSS, and vanilla JavaScript `fetch()`.
 
-Here is the core Ollama caller from `src/extractor.py`—just clean Python:
+![LedgerLocal Dashboard](https://raw.githubusercontent.com/alessiobianchini/ledgerlocal/main/screenshot.png)
+
+Here is the core Ollama caller from `parser.py`—just clean Python:
 
 ```python
 def call_ollama(prompt: str, model: str = "phi4-mini:latest") -> dict:

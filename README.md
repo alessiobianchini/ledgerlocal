@@ -2,6 +2,8 @@
 
 A lightweight, 100% offline invoice and receipt parser for freelancers. Runs on your own machine with Ollama. Zero cloud calls, zero monthly subscriptions.
 
+![LedgerLocal Dashboard](screenshot.png)
+
 ---
 
 ## Why I Built This
