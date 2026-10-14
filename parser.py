@@ -22,7 +22,17 @@ CATEGORIES = [
     "Other"
 ]
 
-EXTRACTION_PROMPT = """Extract the financial fields from this invoice or receipt into a single JSON object.
+EXTRACTION_PROMPT = """You are an accounting parser. Extract the financial metadata from this invoice or receipt into strict JSON.
+
+CRITICAL RULES:
+- vendor: The business, merchant, company, or supplier who sold the goods or issued the invoice (e.g., Cedente/Prestatore, Emittente). Prefer trade or company names over individual owner names. NEVER use the customer, buyer, client, or recipient (e.g., person or company under "Intestatario:", "Cliente:", "Cessionario/Committente:", "Billed to:", "Customer:").
+- date: The invoice issue date formatted as YYYY-MM-DD.
+- total_amount: Final amount payable or paid as a numeric float (e.g. 502.00). Strip currency symbols.
+- tax_amount: Sales tax, VAT, or IVA amount as a float, or null if exempt or zero.
+- currency: ISO 3-letter currency code (e.g. EUR, USD).
+- invoice_number: The official invoice number, receipt ID, or RT fiscal code.
+- category: The best fitting category from the allowed categories list.
+- summary: Short description of the items or services.
 
 Allowed categories:
 - Software & Subscriptions
@@ -35,25 +45,16 @@ Allowed categories:
 - Utilities & Internet
 - Other
 
-Rules:
-- date: YYYY-MM-DD format if clearly present, otherwise null.
-- total_amount: float (e.g. 42.50). Remove currency signs.
-- tax_amount: float for VAT/tax/IVA if listed, otherwise null.
-- currency: ISO 3-letter code (EUR, USD, GBP, etc.).
-- invoice_number: invoice, order, or fiscal receipt (RT) code, or null.
-- category: pick the best matching category from the list above.
-- summary: one brief phrase describing what was bought.
-
-Return only valid JSON matching this schema:
+Target JSON Schema:
 {
-  "vendor": "Company name",
+  "vendor": "Merchant / Supplier Name",
   "date": "YYYY-MM-DD",
   "invoice_number": "INV-123",
   "currency": "EUR",
   "total_amount": 0.0,
   "tax_amount": 0.0,
-  "category": "Software & Subscriptions",
-  "summary": "Monthly server subscription"
+  "category": "Other",
+  "summary": "Description"
 }
 
 DOCUMENT TEXT:
@@ -78,7 +79,7 @@ def parse_with_ollama(text: str, filename: str, model: str = DEFAULT_MODEL) -> d
         raise ValueError(f"No text could be extracted from {filename}")
 
     # Truncate overly long documents to save context window
-    truncated = text[:4000]
+    truncated = text[:5000]
     payload = {
         "model": model,
         "prompt": EXTRACTION_PROMPT + truncated,
@@ -86,7 +87,7 @@ def parse_with_ollama(text: str, filename: str, model: str = DEFAULT_MODEL) -> d
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": 350
+            "num_predict": 512
         }
     }
 
