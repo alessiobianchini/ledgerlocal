@@ -1,121 +1,108 @@
 ---
 title: "I was tired of manual bookkeeping, so I wrote an offline receipt parser with Ollama"
 published: true
-tags: hf26challenge, opensource, python, ai
+tags: devchallenge, hf26challenge, opensource, python
 cover_image: https://raw.githubusercontent.com/alessiobianchini/ledgerlocal/main/screenshot.png
 canonical_url: https://github.com/alessiobianchini/ledgerlocal
 ---
 
-Last weekend was tax prep weekend. 
+*This is a submission for the [Hacktoberfest Open-Source AI Challenge Week 2: Side Hustle](https://dev.to/challenges/hacktoberfest-week2-2026-10-12)*
 
-Like every quarter, I found myself sitting at my desk with an iced coffee, staring at a Downloads folder with 40-something random files: AWS invoices, Uber rides, railway tickets, client coffee receipts, and software subscriptions. And like every quarter, I was manually opening each PDF, finding the total amount, locating the VAT percentage, and typing it into a spreadsheet like a caveman.
+## What I Built
 
-I looked at commercial receipt scanners. They all have the same two problems:
-1. They want $25 to $40 a month. I do my bookkeeping four times a year; I'm not paying a recurring \$360/year subscription for something I touch once a quarter.
-2. They make you upload everything to their servers. My freelance invoices contain NDA-protected project scopes, client corporate names, and my personal card details. I am not sending all of that to an unvetted cloud API.
+Every quarter, freelancers and indie consultants go through the exact same nightmare: a Downloads folder filled with random files—AWS invoices, Uber trip slips, railway tickets, client coffee receipts, and software renewals. 
 
-When I saw the Hacktoberfest Week 2 challenge theme (**"Side Hustle"**—build something with open-source AI that solves a real problem someone would actually pay for), I realized this was the perfect weekend project.
+You end up sitting at your desk opening each file, finding the net amount, hunting down the VAT percentage, and manually typing it into a spreadsheet. 
 
-The tool is called **LedgerLocal**. It's a small local app that extracts dates, vendors, tax/VAT rates, and deduction categories from your receipts using an open-weight model running on your own machine. Zero cloud calls, zero token bills.
+Commercial scanners exist, but they have two dealbreakers:
+1. **Subscription pricing:** They charge $25 to $40 a month. Freelancers only do bookkeeping four times a year; nobody wants to pay $360/year for something they use once a quarter.
+2. **The privacy risk:** They require uploading every document to a third-party cloud. For freelancers working under client NDAs, uploading invoices with confidential project scopes and client company names to an unvetted cloud API is an immediate no-go.
 
----
+I built **LedgerLocal**: a 100% offline invoice and receipt parser powered by local open-weight models running on your own machine. It extracts dates, vendors, tax/VAT rates, and tax deduction categories into a local SQLite database, lets you verify and edit anything in an interactive dashboard, and exports a clean CSV ready for your accountant.
 
-### Why this only works with open-source models
+Who would pay for it? Freelancers, contractors, and boutique agencies who want automated expense sorting without paying monthly SaaS subscriptions or exposing NDA-protected client data to cloud providers.
 
-If you build this with closed APIs (like OpenAI or Claude), the product doesn't make sense:
-
-* **The privacy wall:** The moment you tell a freelancer or a small business accountant *"just upload your client invoices to our cloud backend"*, anyone dealing with serious NDAs will say no. With a local open-weight model running through Ollama, data privacy isn't a legal promise in a privacy policy—it's physically impossible for data to leak because the packets never leave `localhost`.
-* **The unit economics:** If you want to sell a utility like this as a one-time purchase (say, $20 on Gumroad) or release it as a free tool with optional paid add-ons, you can't pay \$0.03 per API call. If a user processes a backlog of 500 invoices from the past two years, cloud API fees would kill you. With local inference, processing 10 receipts or 10,000 receipts costs the exact same: $0.
-* **Offline reliability:** I often do admin work while traveling on trains or flights where connection drops constantly. A local model doesn't care if you have WiFi or not.
-
----
-
-### How I built it (without framework bloat)
-
-I didn't use LangChain, LlamaIndex, or any heavy agent framework for this. For a tool like this, you don't need 15 layers of abstractions; you just need clean parsing and reliable JSON.
-
-The pipeline is simple:
-
-1. **Text Extraction:** When you upload a PDF or text file, `pypdf` extracts the raw text. If it's an image, it base64-encodes it.
-2. **Local Inference:** It posts the raw text to Ollama running `phi4-mini:latest` (or `llama3.2-vision` if you want multimodal). `phi4-mini` is roughly 3.8B parameters, fits comfortably in 4GB of RAM, and parses an invoice on my laptop in about 2-3 seconds.
-3. **Structured Output:** I used Ollama's native `format: "json"` with a strict prompt specifying standard accounting deduction categories (Software, Hosting, Meals, Travel, etc.) and explicit rules for VAT and ISO dates.
-4. **Validation & Storage:** A Pydantic v2 schema validates the output and saves it into a local SQLite file (`ledger.db`).
-5. **UI:** I didn't want a 500MB `node_modules` folder, so the web UI is a single `index.html` file using standard system fonts, responsive CSS, and vanilla JavaScript `fetch()`.
+## Demo
 
 ![LedgerLocal Dashboard](https://raw.githubusercontent.com/alessiobianchini/ledgerlocal/main/screenshot.png)
 
-Here is the core Ollama caller from `parser.py`—just clean Python:
+The workflow is simple:
+1. Drag and drop any folder of invoices or receipts (PDFs, text files, markdown) into the browser window.
+2. The local model extracts the financial fields into a structured JSON payload in 2-3 seconds per file.
+3. Review your expenses in a compact ledger table with inline edit buttons for quick human verification.
+4. Click **Export CSV** to generate a clean, categorized ledger.
 
-```python
-def call_ollama(prompt: str, model: str = "phi4-mini:latest") -> dict:
-    url = "http://localhost:11434/api/generate"
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "format": "json",
-        "stream": False,
-        "options": {
-            "temperature": 0.1,  # Keep it deterministic
-            "num_predict": 512,
-        }
-    }
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        res = json.loads(resp.read().decode("utf-8"))
-        return json.loads(res.get("response", "{}"))
-```
+## Code
 
----
+{% github alessiobianchini/ledgerlocal %}
 
-### The messy reality of invoice parsing (and how I fixed it)
+👉 Direct GitHub link: [github.com/alessiobianchini/ledgerlocal](https://github.com/alessiobianchini/ledgerlocal)
 
-Building the happy path took two hours. Handling real-world receipts took the rest of the weekend:
-
-1. **Ambiguous Dates:** Depending on where the receipt comes from, `05/06/2026` could be May 6th or June 5th. I added a regex validation check in the pipeline; if the model can't determine the date with high confidence, it falls back to `null` so you can manually select it instead of silently logging the wrong tax quarter.
-2. **Italian "Documento Commerciale":** Local Italian restaurant and taxi receipts don't have an "Invoice Number"; they have an `RT` (Registratore Telematico) code like `RT: 99M102391024`. The model was initially returning `null` for invoice IDs on these. I tuned the prompt instructions to recognize fiscal printer IDs as valid document references.
-3. **Multi-currency headaches:** I had receipts in USD (DigitalOcean, GitHub) and receipts in EUR (trains, lunches). My first prototype summed all numbers into one total. That obviously makes no sense, so I updated SQLite queries to separate balances by currency (`EUR: 86.33`, `USD: 69.68`).
-4. **Human-in-the-loop:** No LLM is 100% accurate on messy documents. The UI includes an inline "Edit" button on every row so you can tweak any field in two seconds before exporting.
-
----
-
-### Testing it on a real freelancer
-
-To test if someone would actually use this, I sent the repo to Ale, a freelance consultant friend. I had him drop 15 of his Q3 receipts into the dashboard.
-
-**What worked:**
-* It parsed 15 invoices (PDFs and text receipts) in under 4 minutes.
-* Digital invoices from Google Cloud, GitHub, and Adobe were recognized with 100% accuracy on tax rates and totals.
-
-**What he asked for:**
-* *"Can you add a CLI command? Sometimes I just want to run a terminal script against a folder without opening a browser."*
-  -> Added `python -m src.cli import ./folder` and `python -m src.cli export -o expenses.csv`.
-* *"Would I pay for this?"*
-  His exact answer: *"I would never pay a monthly subscription for this, but if this was packaged as a standalone desktop app for €25, I'd buy it immediately just so I never have to manually type VAT numbers into Excel again."*
-
----
-
-### Running it yourself
-
-The code is completely open-source (MIT license):
-
-👉 **GitHub:** [github.com/alessiobianchini/ledgerlocal](https://github.com/alessiobianchini/ledgerlocal)
-
-Setup takes about 2 minutes:
+The project is completely open source under the MIT license. You can run it locally with:
 
 ```bash
 git clone https://github.com/alessiobianchini/ledgerlocal.git
 cd ledgerlocal
 pip install -r requirements.txt
-
-# Run the web dashboard:
 python run.py
-
-# Or use the CLI:
-python -m src.cli import ./sample_data
-python -m src.cli list
 ```
 
-Open `http://localhost:8000`, drag your receipts in, and hit **Export CSV**.
+## How I Built It
 
-If you're a freelancer dealing with quarterly receipts, give it a spin. If it breaks on a receipt format from your country, open an issue or submit a PR on GitHub.
+I deliberately avoided large orchestration frameworks like LangChain or LlamaIndex. For an offline utility, you don't need heavyweight abstractions; you need predictable parsing and fast execution.
+
+### Architecture
+- **Inference Runtime:** [Ollama](https://ollama.ai) running `phi4-mini:latest` (3.8B parameters). It easily fits in 4GB of RAM and processes an invoice on a standard laptop in ~2-3 seconds.
+- **Text Extraction:** `pypdf` extracts text from digital invoices. Plain text and markdown files are read directly.
+- **Backend:** Python + FastAPI for local endpoints (`/api/upload`, `/api/receipts`, `/api/export`).
+- **Database:** Standard SQLite (`ledger.db`) via Python's native `sqlite3` module with zero ORM overhead.
+- **Frontend:** A single-file `static/index.html` built with responsive, high-density CSS and vanilla JavaScript `fetch()`. No `node_modules` or build step required.
+
+Here is the core extraction function from `parser.py`:
+
+```python
+def parse_with_ollama(text: str, filename: str, model: str = "phi4-mini:latest") -> dict:
+    truncated = text[:5000]
+    payload = {
+        "model": model,
+        "prompt": EXTRACTION_PROMPT + truncated,
+        "format": "json",
+        "stream": False,
+        "options": {
+            "temperature": 0.1,  # Keep output deterministic
+            "num_predict": 512
+        }
+    }
+    req = urllib.request.Request(
+        OLLAMA_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        res = json.loads(resp.read().decode("utf-8"))
+        return json.loads(res.get("response", "{}"))
+```
+
+### Real-World Parsing Challenges
+Handling real invoices required several practical fixes:
+* **Vendor vs. Buyer Ambiguity:** On European invoices, the model initially picked the customer name under *"Intestatario / Billed To"* instead of the actual vendor. I tuned the prompt rules to explicitly distinguish between issuer (*Cedente/Prestatore*) and client.
+* **Date Formats:** To prevent misinterpreting `05/06/2026` (May vs. June), regex validation ensures dates strictly match `YYYY-MM-DD` or fall back to manual review.
+* **Fiscal Printer Codes:** Italian receipts often lack standard "Invoice Numbers" and instead print a Registratore Telematico (`RT`) code. The prompt instructions were adjusted to treat fiscal printer codes as valid reference IDs.
+* **Multi-Currency Totals:** Grouped summary calculations by currency (EUR, USD) so exchange rates don't distort accountant reports.
+
+## Why Does Open Innovation Matter?
+
+Open-source AI wasn't just an implementation choice; it is the entire foundation that makes this tool viable:
+
+1. **Privacy as an Absolute Guarantee:** Invoices contain bank details, customer names, and project deliverables. Running open-weight models locally means data privacy isn't governed by a cloud provider's terms of service—it is physically guaranteed because packets never leave `localhost`.
+2. **Sustainable Unit Economics:** A micro-utility sold as a one-time tool (e.g. $25 on Gumroad) cannot pay $0.02-$0.05 per API call. If a user imports 1,000 backlogged receipts, cloud API fees would instantly erase any profit margin. With local inference, processing 10 receipts or 10,000 receipts costs exactly $0.00.
+3. **Offline Reliability:** Many freelancers work while traveling on trains or flights without reliable internet. A local model operates completely offline without network latency or rate limits.
+
+## My First User
+
+To test if someone would actually use this in the real world, I shared LedgerLocal with Ale, a freelance consultant.
+
+I had him run 15 of his Q3 receipts through the system:
+* **The Good:** It parsed all 15 invoices (DigitalOcean, GitHub, train tickets, client lunches) in under 4 minutes with 100% accuracy on digital PDF totals and tax rates.
+* **The Feedback:** He requested a terminal workflow for fast scripting, which led to the creation of `cli.py` (`python cli.py import ./folder` and `python cli.py export`).
+* **Would he pay?** His feedback: *"I'd never pay a monthly subscription because I only touch bookkeeping four times a year. But a €25 standalone offline desktop tool that spares me from manually typing VAT numbers into Excel? I'd buy that immediately."*
