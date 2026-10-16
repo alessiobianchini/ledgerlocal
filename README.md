@@ -14,7 +14,7 @@ The existing tools usually fall into two traps:
 1. **Expensive SaaS subscriptions ($25-$40/mo):** Bloated accounting platforms you only touch four times a year.
 2. **Privacy risks:** Most "smart" parsers upload your documents to a cloud server. If your invoices contain client NDAs, project descriptions, or card slips, sending them to an unvetted third party is a dealbreaker.
 
-**LedgerLocal** runs locally on your machine using open-weight models (like `phi4-mini` or `llama3.2-vision`) through [Ollama](https://ollama.ai).
+**LedgerLocal** runs locally on your machine using open-weight models (powered by Google's `gemma2:2b`, with support for `phi4-mini` and `llama3.2-vision`) through [Ollama](https://ollama.ai).
 
 - **100% Offline:** Works without an internet connection.
 - **Zero API Bills:** Process 10 or 1,000 receipts without paying per-token charges.
@@ -30,7 +30,7 @@ The existing tools usually fall into two traps:
 1. **Python 3.10+**
 2. **Ollama installed & running:**
    ```bash
-   ollama pull phi4-mini
+   ollama pull gemma2:2b
    ```
 
 ### Installation

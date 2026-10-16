@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import re
@@ -8,7 +9,7 @@ from pypdf import PdfReader
 log = logging.getLogger("ledgerlocal.parser")
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "phi4-mini:latest"
+DEFAULT_MODEL = os.getenv("LEDGER_MODEL", "gemma2:2b")
 
 CATEGORIES = [
     "Software & Subscriptions",
