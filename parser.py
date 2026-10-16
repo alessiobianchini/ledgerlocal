@@ -5,6 +5,7 @@ import re
 import urllib.request
 from pathlib import Path
 from pypdf import PdfReader
+import sentry_sdk
 
 log = logging.getLogger("ledgerlocal.parser")
 
@@ -98,10 +99,27 @@ def parse_with_ollama(text: str, filename: str, model: str = DEFAULT_MODEL) -> d
         headers={"Content-Type": "application/json"}
     )
 
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        res = json.loads(resp.read().decode("utf-8"))
-        raw = res.get("response", "{}")
-        data = json.loads(raw)
+    with sentry_sdk.start_span(op="gen_ai.chat", name=f"Ollama Extraction ({filename})") as span:
+        span.set_data("gen_ai.system", "ollama")
+        span.set_data("gen_ai.request.model", model)
+        span.set_data("gen_ai.response.model", model)
+        span.set_data("ai.invoice.filename", filename)
+
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            raw = res.get("response", "{}")
+            data = json.loads(raw)
+
+        prompt_tokens = res.get("prompt_eval_count", 0)
+        completion_tokens = res.get("eval_count", 0)
+        duration_sec = round(res.get("total_duration", 0) / 1e9, 2)
+
+        span.set_data("gen_ai.usage.prompt_tokens", prompt_tokens)
+        span.set_data("gen_ai.usage.completion_tokens", completion_tokens)
+        span.set_data("gen_ai.usage.total_tokens", prompt_tokens + completion_tokens)
+        span.set_data("gen_ai.cost", 0.0)
+        span.set_data("ai.invoice.duration_sec", duration_sec)
+
 
     # Sanitize and normalize values
     date_val = data.get("date")
