@@ -53,6 +53,11 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/sentry-debug")
+def trigger_error():
+    division_by_zero = 1 / 0
+
+
 @app.get("/api/ping")
 def ping():
     ollama_ok = False
