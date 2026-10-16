@@ -1,10 +1,18 @@
 import argparse
+import os
 from pathlib import Path
+import sentry_sdk
+
 
 import db
 import parser
 
+SENTRY_DSN = os.getenv("SENTRY_DSN", "https://d1119d5c1aba5b3a09053e8ff629f481@o4512266577575936.ingest.de.sentry.io/4512266587471952")
+if SENTRY_DSN:
+    sentry_sdk.init(dsn=SENTRY_DSN, traces_sample_rate=1.0, send_default_pii=True)
+
 db.init_db()
+
 
 
 def cmd_import(path: str):

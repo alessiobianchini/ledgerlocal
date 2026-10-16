@@ -12,8 +12,11 @@ from pydantic import BaseModel
 import db
 import parser
 
-# Optional Sentry Agent Tracing & Performance Monitoring
-SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+# Sentry Agent Tracing & Performance Monitoring
+SENTRY_DSN = os.getenv(
+    "SENTRY_DSN",
+    "https://d1119d5c1aba5b3a09053e8ff629f481@o4512266577575936.ingest.de.sentry.io/4512266587471952"
+)
 if SENTRY_DSN:
     import sentry_sdk
     sentry_sdk.init(
@@ -21,6 +24,7 @@ if SENTRY_DSN:
         traces_sample_rate=1.0,
         send_default_pii=True,
     )
+
 
 app = FastAPI(title="ledgerlocal")
 
