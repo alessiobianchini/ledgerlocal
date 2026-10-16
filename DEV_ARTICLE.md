@@ -26,6 +26,8 @@ Who would pay for it? Freelancers, contractors, and boutique agencies who want a
 
 ![LedgerLocal Dashboard](https://raw.githubusercontent.com/alessiobianchini/ledgerlocal/main/screenshot.png)
 
+👉 **Live Web Preview:** [https://ledgerlocal.onrender.com](https://ledgerlocal.onrender.com) *(Hosted on Render with sample invoices preloaded)*
+
 The workflow is simple:
 1. Drag and drop any folder of invoices or receipts (PDFs, text files, markdown) into the browser window.
 2. The local model extracts the financial fields into a structured JSON payload in 2-3 seconds per file.
