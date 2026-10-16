@@ -128,3 +128,61 @@ def stats() -> dict:
         "currencies": {k: round(v, 2) for k, v in by_curr.items()},
         "categories": {k: round(v, 2) for k, v in by_cat.items()}
     }
+
+
+def seed_demo_data():
+    if all_receipts():
+        return
+    samples = [
+        {
+            "filename": "invoice_digitalocean.txt",
+            "vendor": "DigitalOcean, LLC",
+            "date": "2026-10-01",
+            "invoice_number": "IN-DO-883921",
+            "currency": "USD",
+            "total_amount": 48.00,
+            "tax_amount": 0.00,
+            "category": "Hosting & Cloud",
+            "summary": "Droplets & Managed Databases - October 2026",
+            "raw_text": "Sample DigitalOcean Invoice"
+        },
+        {
+            "filename": "invoice_github.txt",
+            "vendor": "GitHub, Inc.",
+            "date": "2026-09-28",
+            "invoice_number": "GH-2026-9812",
+            "currency": "USD",
+            "total_amount": 21.00,
+            "tax_amount": 0.00,
+            "category": "Software & Subscriptions",
+            "summary": "GitHub Copilot & Team Plan Seats",
+            "raw_text": "Sample GitHub Invoice"
+        },
+        {
+            "filename": "receipt_uber_trip.txt",
+            "vendor": "Uber B.V.",
+            "date": "2026-10-05",
+            "invoice_number": "UBER-TRIP-7491",
+            "currency": "EUR",
+            "total_amount": 28.50,
+            "tax_amount": 2.59,
+            "category": "Travel & Transport",
+            "summary": "Trip to client office / Central Station",
+            "raw_text": "Sample Uber Receipt"
+        },
+        {
+            "filename": "receipt_bistrot.txt",
+            "vendor": "Antico Bistrot Milano S.r.l.",
+            "date": "2026-10-09",
+            "invoice_number": "RT-04829104",
+            "currency": "EUR",
+            "total_amount": 42.00,
+            "tax_amount": 3.82,
+            "category": "Meals & Entertainment",
+            "summary": "Client meeting lunch (2 persons)",
+            "raw_text": "Sample Bistrot Receipt"
+        }
+    ]
+    for s in samples:
+        insert_receipt(s)
+

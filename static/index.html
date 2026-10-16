@@ -393,8 +393,8 @@
         <span>Total: <strong id="m-total">0.00</strong></span>
         <span id="m-currencies" style="color: var(--text-muted);"></span>
       </div>
-      <div style="font-size: 11px; color: var(--text-muted);">
-        Local Ollama (phi4-mini) &bull; Zero network calls
+      <div id="runtime-desc" style="font-size: 11px; color: var(--text-muted);">
+        Google Gemma 2 2B (Local & Open-Weight) &bull; Zero network calls
       </div>
     </div>
 
@@ -506,8 +506,13 @@
         const r = await fetch('/api/ping');
         const data = await r.json();
         const badge = document.getElementById('ollama-status');
-        if (data.ollama) {
-          badge.textContent = 'ollama: online';
+        const desc = document.getElementById('runtime-desc');
+        if (data.render) {
+          badge.textContent = 'render: cloud demo';
+          badge.className = 'badge online';
+          if (desc) desc.innerHTML = 'Render Cloud Demo &bull; Local Inference with Gemma 2 2B';
+        } else if (data.ollama) {
+          badge.textContent = 'ollama: gemma 2';
           badge.className = 'badge online';
         } else {
           badge.textContent = 'ollama: offline';

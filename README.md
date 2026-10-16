@@ -56,17 +56,26 @@ If you prefer working from the terminal:
 
 ```bash
 # Process all files in a folder
-python -m src.cli import ./sample_data
+python cli.py import ./sample_data
 
 # View your expense ledger
-python -m src.cli list
+python cli.py list
 
 # View summary stats by category and currency
-python -m src.cli stats
+python cli.py stats
 
 # Export to CSV
-python -m src.cli export -o expenses.csv
+python cli.py export -o expenses.csv
 ```
+
+### Cloud Demo (Deploy on Render)
+
+LedgerLocal includes a native Render Blueprint (`render.yaml`) to host the web interface:
+
+1. Fork or push this repository to GitHub.
+2. Go to [dashboard.render.com](https://dashboard.render.com) and click **New +** &rarr; **Blueprint**.
+3. Select your repository. Render will automatically detect `render.yaml` and deploy the service.
+
 
 ---
 

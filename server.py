@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import urllib.request
@@ -14,6 +15,10 @@ import parser
 app = FastAPI(title="ledgerlocal")
 
 db.init_db()
+
+IS_RENDER = os.getenv("RENDER") == "true"
+if IS_RENDER:
+    db.seed_demo_data()
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -36,11 +41,18 @@ def index():
 
 @app.get("/api/ping")
 def ping():
+    ollama_ok = False
     try:
         with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2) as r:
-            return {"status": "ok", "ollama": True}
+            ollama_ok = True
     except Exception:
-        return {"status": "warning", "ollama": False}
+        ollama_ok = False
+
+    return {
+        "status": "ok",
+        "ollama": ollama_ok,
+        "render": IS_RENDER
+    }
 
 
 @app.get("/api/receipts")
@@ -69,7 +81,10 @@ async def upload(files: List[UploadFile] = File(...)):
                 saved = db.insert_receipt(data)
                 parsed.append(saved)
             except Exception as e:
-                errors.append({"file": f.filename, "error": str(e)})
+                err_msg = str(e)
+                if IS_RENDER and ("11434" in err_msg or "Connection refused" in err_msg or "WinError" in err_msg or "urlopen error" in err_msg):
+                    err_msg = "Cloud Demo Mode: Local Ollama is unreachable on this cloud instance. LedgerLocal's architecture guarantees 100% data confidentiality by running Gemma 2 locally on your own laptop or local GPU server."
+                errors.append({"file": f.filename, "error": err_msg})
 
     return {"uploaded": parsed, "errors": errors}
 

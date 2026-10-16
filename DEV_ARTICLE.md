@@ -110,4 +110,6 @@ I had him run 15 of his Q3 receipts through the system:
 ## Prize Categories
 
 - **Best Use of Gemma**: LedgerLocal uses Google's open-weight Gemma 2 model (`gemma2:2b` via Ollama) as its core offline inference engine to parse sensitive invoices and receipts with zero API fees, sub-2-second latency, and total client data confidentiality.
+- **Best Use of Render**: The interactive web dashboard and backend API are configured with a native Render Blueprint (`render.yaml`) to host the user interface, database, and CSV export online, giving reviewers and potential users an instant live preview.
+
 
